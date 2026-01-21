@@ -259,7 +259,14 @@ export class Notes implements ICollection {
       this.db.options?.batchSize
     );
   }
-
+  get allWithArchive() {
+    return this.collection.createFilter<Note>(
+      (qb) =>
+        qb
+          .where(isFalse("deleted"))
+          .where(isFalse("dateDeleted"))
+    )
+  }
   get exportable() {
     return this.collection.createFilter<Note>(
       (qb) => qb.where(isFalse("dateDeleted")).where(isFalse("deleted")),

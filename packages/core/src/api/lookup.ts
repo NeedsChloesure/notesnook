@@ -272,7 +272,7 @@ export default class Lookup {
       );
       matches.ids = matches.values.map((c) => c.id);
     } else {
-      const sortedNoteIds = await this.db.notes.all
+      const sortedNoteIds = await this.db.notes.allWithArchive
         .fields(["notes.id"])
         .items(matches.ids, sortOptions);
       const sorted: Matches = { ids: [], values: [] };
