@@ -69,7 +69,16 @@ function databaseTest(type: "memory" | "persistent" = "memory") {
   });
   betterTrigram.load(betterSqliteDb);
   fts5Html.load(betterSqliteDb);
-  betterSqliteDb.loadExtension(getLoadablePath());
+  try {
+    betterSqliteDb.loadExtension(getLoadablePath());
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes("Loadble extension for sqlite-regex not found")
+    ) {
+      throw error;
+    }
+  }
   return db.init().then(() => db);
 }
 

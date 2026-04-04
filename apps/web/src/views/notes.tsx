@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ListContainer from "../components/list-container";
 import {
-  notesFromContext,
+  searchNotesFromContext,
   useStore as useNotesStore
 } from "../stores/note-store";
 import Placeholder from "../components/placeholders";
@@ -46,7 +46,7 @@ function Notes(props: NotesProps) {
     context?.type === "notebook" ? "notebook" : "notes",
     async (query, sortOptions) => {
       if (!context || !contextNotes) return;
-      const notes = notesFromContext(context);
+      const notes = searchNotesFromContext(context, query);
       return await db.lookup.notesWithHighlighting(query, notes, sortOptions);
     },
     [context, contextNotes]

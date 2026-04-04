@@ -246,6 +246,14 @@ class RelationsArray<TType extends keyof RelatableTable> {
   ) {}
 
   get selector() {
+    return this.createSelector(false);
+  }
+
+  get selectorIncludingArchived() {
+    return this.createSelector(true);
+  }
+
+  private createSelector(includeArchived: boolean) {
     if (!this.types)
       throw new Error("Cannot use selector when no tables are specified.");
     if (this.types.length > 1)
@@ -262,7 +270,7 @@ class RelationsArray<TType extends keyof RelatableTable> {
           b
             .selectFrom("relations")
             .$call((eb) =>
-              this.buildRelationsQuery()(
+              this.buildRelationsQuery(includeArchived)(
                 eb as SelectQueryBuilder<DatabaseSchema, "relations", unknown>
               )
             )
@@ -369,7 +377,7 @@ class RelationsArray<TType extends keyof RelatableTable> {
    * parameters. The resulting query uses a covering index (the most
    * optimizable index) for obtaining relations.
    */
-  private buildRelationsQuery() {
+  private buildRelationsQuery(includeArchived = false) {
     return (
       builder: SelectQueryBuilder<DatabaseSchema, "relations", unknown>
     ) => {
@@ -398,7 +406,8 @@ class RelationsArray<TType extends keyof RelatableTable> {
           .$if(
             !!this.types?.includes("note" as TType) &&
               this.db.notes.cache.archived.length > 0 &&
-              this.reference.type !== "attachment",
+              this.reference.type !== "attachment" &&
+              !includeArchived,
             (b) => b.where("fromId", "not in", this.db.notes.cache.archived)
           )
           .$if(
@@ -432,7 +441,8 @@ class RelationsArray<TType extends keyof RelatableTable> {
           )
           .$if(
             !!this.types?.includes("note" as TType) &&
-              this.db.notes.cache.archived.length > 0,
+              this.db.notes.cache.archived.length > 0 &&
+              !includeArchived,
             (b) => b.where("toId", "not in", this.db.notes.cache.archived)
           )
           .$if(

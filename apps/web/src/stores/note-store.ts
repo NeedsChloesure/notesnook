@@ -24,7 +24,7 @@ import { store as trashStore } from "./trash-store";
 import Vault from "../common/vault";
 import BaseStore from ".";
 import Config from "../utils/config";
-import { Note, VirtualizedGrouping } from "@notesnook/core";
+import { Note, VirtualizedGrouping, transformQuery } from "@notesnook/core";
 import { Context } from "../components/list-container/types";
 
 type ViewMode = "detailed" | "compact";
@@ -157,6 +157,29 @@ export function notesFromContext(context: Context) {
       return db.notes.favorites;
     case "archive":
       return db.notes.archived;
+    case "monographs":
+      return db.monographs.all;
+  }
+}
+
+export function searchNotesFromContext(context: Context, query: string) {
+  const archived = transformQuery(query).archived;
+  const includeArchived = archived !== null && archived !== undefined;
+
+  switch (context.type) {
+    case "notebook":
+    case "tag":
+    case "color":
+      return includeArchived
+        ? db.relations
+            .from({ type: context.type, id: context.id }, "note")
+            .selectorIncludingArchived
+        : db.relations.from({ type: context.type, id: context.id }, "note")
+            .selector;
+    case "favorite":
+      return includeArchived ? db.notes.favoritesWithArchived : db.notes.favorites;
+    case "archive":
+      return includeArchived ? db.notes.exportable : db.notes.archived;
     case "monographs":
       return db.monographs.all;
   }

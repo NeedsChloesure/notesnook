@@ -204,7 +204,8 @@ const NotesPage = ({
             type: "note",
             title: title!,
             route: route.name,
-            items: selector
+            items: selector,
+            searchReference: route.name === "Monographs" ? undefined : item
           });
         }}
         onPressDefaultRightButton={onPressFloatingButton}

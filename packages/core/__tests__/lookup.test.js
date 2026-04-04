@@ -140,6 +140,209 @@ test("search reminders", () =>
     expect(descriptionSearch).toHaveLength(1);
   }));
 
+test("search notes should support filter-only queries", () =>
+  databaseTest().then(async (db) => {
+    const favoriteId = await db.notes.add({
+      title: "favorite note",
+      favorite: true
+    });
+    await db.notes.add({
+      title: "regular note",
+      favorite: false
+    });
+
+    const filtered = await db.lookup.notes("favorite:true").ids();
+
+    expect(filtered).toContain(favoriteId);
+    expect(filtered).toHaveLength(1);
+  }));
+
+test("search notes should preserve OR matches when short tokens require local scan", () =>
+  databaseTest().then(async (db) => {
+    await db.notes.add({
+      title: "hello world"
+    });
+    await db.notes.add({
+      title: "tiny token",
+      content: { type: "tiptap", data: "<p>hb</p>" }
+    });
+
+    const filtered = await db.lookup.notes("hello OR hb").ids();
+
+    expect(filtered).toHaveLength(2);
+  }));
+
+test("search notes should exclude tagged notes with tagged:false", () =>
+  databaseTest().then(async (db) => {
+    const untaggedId = await db.notes.add({
+      title: "untagged note"
+    });
+    const taggedId = await db.notes.add({
+      title: "tagged note"
+    });
+    const tagId = await db.tags.add({
+      title: "project"
+    });
+    await db.relations.add(
+      { type: "tag", id: tagId },
+      { type: "note", id: taggedId }
+    );
+
+    const filtered = await db.lookup.notes("tagged:false").ids();
+
+    expect(filtered).toContain(untaggedId);
+    expect(filtered).not.toContain(taggedId);
+    expect(filtered).toHaveLength(1);
+  }));
+
+test("search notes should exclude tagged matches with tagged:false", () =>
+  databaseTest().then(async (db) => {
+    const untaggedId = await db.notes.add({
+      title: "shared search text"
+    });
+    const taggedId = await db.notes.add({
+      title: "shared search text"
+    });
+    const tagId = await db.tags.add({
+      title: "project"
+    });
+    await db.relations.add(
+      { type: "tag", id: tagId },
+      { type: "note", id: taggedId }
+    );
+
+    const filtered = await db.lookup.notes("shared search text tagged:false").ids();
+
+    expect(filtered).toEqual([untaggedId]);
+  }));
+
+test("search notes should exclude colored notes with colored:false", () =>
+  databaseTest().then(async (db) => {
+    const plainId = await db.notes.add({
+      title: "plain note"
+    });
+    const coloredId = await db.notes.add({
+      title: "colored note"
+    });
+    const colorId = await db.colors.add({
+      title: "red",
+      colorCode: "#ff0000"
+    });
+    await db.relations.add(
+      { type: "color", id: colorId },
+      { type: "note", id: coloredId }
+    );
+
+    const filtered = await db.lookup.notes("colored:false").ids();
+
+    expect(filtered).toContain(plainId);
+    expect(filtered).not.toContain(coloredId);
+    expect(filtered).toHaveLength(1);
+  }));
+
+test("search notes should include only filed notes with in_notebook:true", () =>
+  databaseTest().then(async (db) => {
+    const filedId = await db.notes.add({
+      title: "filed note"
+    });
+    await db.notes.add({
+      title: "loose note"
+    });
+    const notebookId = await db.notebooks.add({
+      title: "Projects"
+    });
+    await db.relations.add(
+      { type: "notebook", id: notebookId },
+      { type: "note", id: filedId }
+    );
+
+    const filtered = await db.lookup.notes("in_notebook:true").ids();
+
+    expect(filtered).toEqual([filedId]);
+  }));
+
+test("search notes should exclude filed notes with in_notebook:false", () =>
+  databaseTest().then(async (db) => {
+    const filedId = await db.notes.add({
+      title: "filed note"
+    });
+    const looseId = await db.notes.add({
+      title: "loose note"
+    });
+    const notebookId = await db.notebooks.add({
+      title: "Projects"
+    });
+    await db.relations.add(
+      { type: "notebook", id: notebookId },
+      { type: "note", id: filedId }
+    );
+
+    const filtered = await db.lookup.notes("in_notebook:false").ids();
+
+    expect(filtered).toEqual([looseId]);
+  }));
+
+test("search notebook scope should keep notebook selector for in_notebook:false", () =>
+  databaseTest().then(async (db) => {
+    const filedId = await db.notes.add({
+      title: "scoped note"
+    });
+    const notebookId = await db.notebooks.add({
+      title: "Projects"
+    });
+    await db.relations.add(
+      { type: "notebook", id: notebookId },
+      { type: "note", id: filedId }
+    );
+
+    const selector = db.relations
+      .from({ type: "notebook", id: notebookId }, "note")
+      .selector;
+
+    expect(await db.lookup.notes("in_notebook:true", selector).ids()).toEqual([
+      filedId
+    ]);
+    expect(await db.lookup.notes("in_notebook:false", selector).ids()).toEqual(
+      []
+    );
+  }));
+
+test("search notes should include archived results with archived:true", () =>
+  databaseTest().then(async (db) => {
+    await db.notes.add({
+      title: "shared search text"
+    });
+    const archivedId = await db.notes.add({
+      title: "shared search text"
+    });
+    await db.notes.archive(true, archivedId);
+
+    const filtered = await db.lookup.notes("shared search text archived:true").ids();
+
+    expect(filtered).toContain(archivedId);
+    expect(filtered).toHaveLength(2);
+  }));
+
+test("search notes should return only archived results with archived:only", () =>
+  databaseTest().then(async (db) => {
+    await db.notes.add({
+      title: "shared archived text"
+    });
+    const archivedId = await db.notes.add({
+      title: "shared archived text"
+    });
+    await db.notes.archive(true, archivedId);
+
+    expect(await db.notes.archived.ids()).toEqual([archivedId]);
+    expect(
+      await db.notes.exportable.where((eb) => eb("notes.archived", "==", true)).ids()
+    ).toEqual([archivedId]);
+
+    const filtered = await db.lookup.notes("shared archived text archived:only").ids();
+
+    expect(filtered).toEqual([archivedId]);
+  }));
+
 describe("notesWithHighlighting", () => {
   test("search notes with parentheses in query should load the item", () =>
     noteTest({

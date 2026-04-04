@@ -311,6 +311,17 @@ export class Notes implements ICollection {
     );
   }
 
+  get favoritesWithArchived() {
+    return this.collection.createFilter<Note>(
+      (qb) =>
+        qb
+          .where(isFalse("dateDeleted"))
+          .where(isFalse("deleted"))
+          .where("favorite", "==", true),
+      this.db.options?.batchSize
+    );
+  }
+
   get archived() {
     return this.collection.createFilter<Note>(
       (qb) =>

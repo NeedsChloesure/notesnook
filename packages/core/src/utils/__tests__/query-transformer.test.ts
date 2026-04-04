@@ -77,3 +77,7 @@ for (const [input, expectedOutput] of TRANSFORM_QUERY_TESTS) {
     expect(transformQuery(input).content?.query).toBe(expectedOutput);
   });
 }
+
+test('should parse archived:only as an archived-only filter', () => {
+  expect(transformQuery("archived:only").archived).toBe("only");
+});

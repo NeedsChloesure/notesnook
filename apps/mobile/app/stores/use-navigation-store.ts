@@ -80,6 +80,7 @@ export interface RouteParams extends ParamListBase {
     title: string;
     route: RouteName;
     items?: FilteredSelector<Item>;
+    searchReference?: Notebook | Tag | Color;
   };
   TaggedNotes: NotesScreenParams;
   ColoredNotes: NotesScreenParams;

@@ -26,6 +26,7 @@ import { useSearch } from "../hooks/use-search";
 import { db } from "../common/db";
 import { useEditorStore } from "../stores/editor-store";
 import { ListLoader } from "../components/loaders/list-loader";
+import { transformQuery } from "@notesnook/core";
 
 function Home() {
   const notes = useStore((store) => store.notes);
@@ -36,9 +37,13 @@ function Home() {
     "notes",
     async (query, sortOptions) => {
       if (useStore.getState().context) return;
+      const notes =
+        transformQuery(query).archived !== null
+          ? db.notes.exportable
+          : db.notes.all;
       return await db.lookup.notesWithHighlighting(
         query,
-        db.notes.all,
+        notes,
         sortOptions
       );
     },

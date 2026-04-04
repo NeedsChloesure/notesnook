@@ -175,7 +175,8 @@ const NotebookScreen = ({ route, navigation }: NavigationProps<"Notebook">) => {
             type: "note",
             title: notebook?.title,
             route: route.name,
-            items: selector
+            items: selector,
+            searchReference: notebook
           });
         }}
         id={notebook?.id}

@@ -21,6 +21,7 @@ import {
   FilteredSelector,
   Item,
   Note,
+  transformQuery,
   VirtualizedGrouping
 } from "@notesnook/core";
 import { strings } from "@notesnook/intl";
@@ -50,6 +51,35 @@ export const Search = ({ route, navigation }: NavigationProps<"Search">) => {
     }
   });
 
+  const resolveNoteSelector = React.useCallback(
+    (query: string) => {
+      const includeArchived = transformQuery(query).archived !== null;
+      if (!includeArchived) {
+        return (route.params.items as FilteredSelector<Note>) || db.notes.all;
+      }
+
+      switch (route.params.route) {
+        case "Notes":
+        case "Archive":
+          return db.notes.exportable;
+        case "Favorites":
+          return db.notes.favoritesWithArchived;
+        case "Notebook":
+        case "NotesPage":
+        case "TaggedNotes":
+        case "ColoredNotes":
+          return route.params.searchReference
+            ? db.relations
+                .from(route.params.searchReference, "note")
+                .selectorIncludingArchived
+            : (route.params.items as FilteredSelector<Note>);
+        default:
+          return (route.params.items as FilteredSelector<Note>) || db.notes.exportable;
+      }
+    },
+    [route.params.items, route.params.route, route.params.searchReference]
+  );
+
   const onSearch = React.useCallback(
     async (query?: string) => {
       currentQuery.current = query;
@@ -67,7 +97,7 @@ export const Search = ({ route, navigation }: NavigationProps<"Search">) => {
           case "note":
             results = await db.lookup.notesWithHighlighting(
               query,
-              route.params.items as FilteredSelector<Note>,
+              resolveNoteSelector(query),
               groupOptions
             );
 
@@ -115,7 +145,7 @@ export const Search = ({ route, navigation }: NavigationProps<"Search">) => {
         DatabaseLogger.error(e);
       }
     },
-    [route.params?.items, route.params.type]
+    [resolveNoteSelector, route.params.type]
   );
 
   useEffect(() => {

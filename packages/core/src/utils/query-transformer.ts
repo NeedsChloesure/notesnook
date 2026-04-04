@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 import dayjs from "dayjs";
-import { servicesVersion } from "typescript";
 
 type ASTNode = QueryNode | PhraseNode | OperatorNode | FieldPhraseNode;
 
@@ -41,6 +40,14 @@ type FieldPhraseNode = {
 type OperatorNode = {
   type: "AND" | "OR" | "NOT";
 };
+
+export interface SerializedQuery {
+  query?: string;
+  tokens: QueryTokens;
+  ast: QueryNode;
+}
+
+export type ArchivedFilter = boolean | "only" | null;
 
 const SUPPORTED_FIELDS = {
   title: (ast) => {
@@ -71,7 +78,7 @@ const SUPPORTED_FIELDS = {
   locked: (ast) => parseBooleanField("locked", ast),
   readonly: (ast) => parseBooleanField("readonly", ast),
   favorite: (ast) => parseBooleanField("favorite", ast),
-  archived: (ast) => parseBooleanField("archived", ast),
+  archived: (ast) => parseArchivedField(ast),
   tagged: (ast) => parseBooleanField("tagged", ast),
   colored: (ast) => parseBooleanField("colored", ast),
   in_notebook: (ast) => parseBooleanField("in_notebook", ast)
@@ -88,8 +95,21 @@ function parseBooleanField(
   const node = ast.find(
     (a): a is FieldPhraseNode => a.type === "field_phrase" && a.field === field
   );
-  const sql = node ? generateSQL(node.value) : "";
+  const sql = node ? serializeAst(node.value) || "" : "";
   return sql === "false" ? false : sql === "true" ? true : null;
+}
+
+function parseArchivedField(
+  ast: (QueryNode | FieldPhraseNode)[]
+): ArchivedFilter {
+  const node = ast.find(
+    (a): a is FieldPhraseNode => a.type === "field_phrase" && a.field === "archived"
+  );
+  const sql = (node ? serializeAst(node.value) : "")?.toLowerCase();
+  if (sql === "only") return "only";
+  if (sql === "true") return true;
+  if (sql === "false") return false;
+  return null;
 }
 
 function parseArrayField(
@@ -101,7 +121,8 @@ function parseArrayField(
       (a): a is FieldPhraseNode =>
         a.type === "field_phrase" && a.field === field
     )
-    .map((a) => generateSQL(a.value));
+    .map((a) => serializeAst(a.value))
+    .filter((value): value is string => !!value);
   return values.length > 0 ? values : null;
 }
 
@@ -112,7 +133,7 @@ function parseDateField(
   const node = ast.find(
     (a): a is FieldPhraseNode => a.type === "field_phrase" && a.field === field
   );
-  const date = node ? dayjs(generateSQL(node.value)) : null;
+  const date = node ? dayjs(serializeAst(node.value)) : null;
   return date?.isValid() ? date.toDate().getTime() : null;
 }
 
@@ -262,18 +283,49 @@ function transformQueryNode(ast: QueryNode): QueryNode {
   return transformedAST;
 }
 
-function generateSQL(ast: QueryNode): string {
-  return ast.children
-    .map((child) => {
-      if (child.type === "phrase") {
-        return child.value.filter((v) => v.length >= 3).join(" AND ");
+function serializeAst(ast: QueryNode, minimumTokenLength = 0): string | undefined {
+  const parts: string[] = [];
+
+  for (const child of ast.children) {
+    if (child.type === "phrase") {
+      const phrase = child.value
+        .filter((value) => value.length >= minimumTokenLength)
+        .join(" AND ");
+
+      if (!phrase) continue;
+
+      const last = parts[parts.length - 1];
+      if (last && last !== "AND" && last !== "OR" && last !== "NOT") {
+        parts.push("AND");
       }
-      if (child.type === "AND" || child.type === "OR" || child.type === "NOT") {
-        return child.type;
+
+      parts.push(phrase);
+      continue;
+    }
+
+    if (child.type === "NOT") {
+      const last = parts[parts.length - 1];
+      if (last && last !== "AND" && last !== "OR" && last !== "NOT") {
+        parts.push("NOT");
       }
-      return "";
-    })
-    .join(" ");
+      continue;
+    }
+
+    const last = parts[parts.length - 1];
+    if (!last || last === "AND" || last === "OR" || last === "NOT") continue;
+    parts.push(child.type);
+  }
+
+  while (parts.length > 0) {
+    const last = parts[parts.length - 1];
+    if (last === "AND" || last === "OR" || last === "NOT") {
+      parts.pop();
+      continue;
+    }
+    break;
+  }
+
+  return parts.join(" ") || undefined;
 }
 
 // Main transformer: returns (QueryNode | FieldPhraseNode)[]
@@ -315,10 +367,12 @@ export function transformQuery(query: string): {
   return { ...fields, filters };
 }
 
-function serializeQuery(node: QueryNode | FieldPhraseNode) {
+function serializeQuery(node: QueryNode | FieldPhraseNode): SerializedQuery {
+  const ast = node.type === "query" ? node : node.value;
   return {
-    query: generateSQL(node.type === "query" ? node : node.value),
-    tokens: tokenizeAst(node.type === "query" ? node : node.value)
+    query: serializeAst(ast, 3),
+    tokens: tokenizeAst(ast),
+    ast
   };
 }
 
