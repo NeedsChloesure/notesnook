@@ -872,6 +872,12 @@ export function AuthForm<T extends AuthRoutes>(props: AuthFormProps<T>) {
             );
             return;
           }
+          if (error.message === "Password too short.") {
+            setError(
+              strings.passTooShort()
+            )
+            return;
+          }
           setError(error.message);
         }
       }}

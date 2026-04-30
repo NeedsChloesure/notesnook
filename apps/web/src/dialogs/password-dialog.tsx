@@ -79,8 +79,8 @@ const PasswordDialog = DialogManager.register(function PasswordDialog<
                 return [id, inputData.toString()];
               })
             ) as Record<TInputId, string>;
-
-            if (await validate(passwords)) {
+            try {
+            await validate(passwords)
               onClose(
                 checks
                   ? (Object.fromEntries(
@@ -90,11 +90,16 @@ const PasswordDialog = DialogManager.register(function PasswordDialog<
                     ) as Record<TCheckId, boolean>)
                   : true
               );
-            } else {
-              setError("Wrong password.");
+            } catch (e: any) {
+              if (e.message === "Password too short.") {
+                setError(strings.passTooShort())
+                setIsLoading(false);
+                return;
+              } else {
+              setError(e.message);
               setIsLoading(false);
-            }
-          } catch (e) {
+              }
+            }} catch (e) {
             setError(e instanceof Error ? e.message : JSON.stringify(e));
             setIsLoading(false);
           }

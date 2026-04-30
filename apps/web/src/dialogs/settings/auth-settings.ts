@@ -56,11 +56,16 @@ export const AuthenticationSettings: SettingsGroup[] = [
                   newPassword: {
                     label: strings.newPassword(),
                     autoComplete: "new-password"
+                  },
+                  newPasswordConfirm: {
+                    label: strings.confirmPassword(),
+                    autoComplete: "new-password"
                   }
                 },
-                validate: async ({ oldPassword, newPassword }) => {
+                validate: async ({ oldPassword, newPassword, newPasswordConfirm }) => {
                   try {
-                    if (!(await createBackup({ noVerify: true }))) return false;
+                    if (newPassword !== newPasswordConfirm) return false;
+                    if (newPassword.length >= 8 && !(await createBackup({ noVerify: true }))) return false;
                     return (
                       (await db.user.changePassword(
                         oldPassword,
@@ -69,7 +74,7 @@ export const AuthenticationSettings: SettingsGroup[] = [
                     );
                   } catch (e) {
                     console.error(e);
-                    return false;
+                    throw e;
                   }
                 }
               });
