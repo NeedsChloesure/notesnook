@@ -78,6 +78,7 @@ class UserManager {
   }
 
   async signup(email: string, password: string) {
+    if (password.length < 8) throw Error(`Password too short.`)
     email = email.toLowerCase();
 
     const hashedPassword = await this.db.storage().hash(password, email);
@@ -372,6 +373,7 @@ class UserManager {
   }
 
   changePassword(oldPassword: string, newPassword: string) {
+    if (newPassword.length < 8) throw Error(`Password too short.`);
     return this._updatePassword("change", {
       old_password: oldPassword,
       new_password: newPassword
