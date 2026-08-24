@@ -73,6 +73,7 @@
     "papaparse": "^5.5.3",
     "prism-themes": "^1.9.0",
     "prosemirror-codemark": "^0.4.2",
+    "prosemirror-commands": "1.5.2",
     "prosemirror-model": "1.25.11",
     "prosemirror-state": "1.4.4",
     "prosemirror-transform": "1.12.0",
