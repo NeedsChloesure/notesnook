@@ -141,7 +141,7 @@ export const SubscriptionSettings: SettingsGroup[] = [
                 const url = await db.subscriptions.updateUrl();
                 if (!url)
                   throw new Error(
-                    "Failed to get subscription update url. Please contact us at support@streetwriters.co so we can help you update your payment method."
+                    "Failed to get the subscription update url. Please try again later."
                   );
                 window.open(url, "_blank");
               } catch (e) {

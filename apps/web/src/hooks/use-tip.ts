@@ -22,6 +22,7 @@ import { CREATE_BUTTON_MAP } from "../common";
 import { ArrowTopRight, Icon, Plus } from "../components/icons";
 import Config from "../utils/config";
 import { strings } from "@notesnook/intl";
+import { openExternalLink } from "../utils/unofficial-build";
 
 declare global {
   interface Array<T> {
@@ -129,9 +130,8 @@ const getDefaultTips = (): Record<
       title: strings.whatAreMonographs(),
       icon: ArrowTopRight,
       onClick() {
-        window.open(
-          "https://notesnook.com/help/publish-notes-with-monographs",
-          "_blank"
+        void openExternalLink(
+          "https://notesnook.com/help/publish-notes-with-monographs"
         );
       }
     }

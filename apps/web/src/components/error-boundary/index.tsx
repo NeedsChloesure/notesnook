@@ -194,25 +194,6 @@ export function ErrorComponent({ error, resetErrorBoundary }: FallbackProps) {
               >
                 {strings.copy()}
               </Button>
-              <Button
-                variant="secondary"
-                sx={{ alignSelf: "start", px: 30, mt: 1 }}
-                onClick={async () => {
-                  const mailto = new URL("mailto:support@streetwriters.co");
-                  mailto.searchParams.set(
-                    "body",
-                    `${errorToString(error)}
-
----
-Device information:
-
-${getDeviceInfo()}`
-                  );
-                  window.open(mailto.toString(), "_blank");
-                }}
-              >
-                {strings.contactSupport()}
-              </Button>
             </>
           </Flex>
         </Flex>
@@ -273,13 +254,11 @@ function errorToString(error: unknown) {
 }
 
 async function resetDatabase() {
-  const multiTab = !!globalThis.SharedWorker && isFeatureSupported("opfs");
   await useKeyStore.getState().clear();
   const dialect = createDialect({
     name: "notesnook",
     encrypted: true,
-    async: !isFeatureSupported("opfs"),
-    multiTab
+    async: !isFeatureSupported("opfs")
   });
   const driver = dialect.createDriver();
   await driver.delete();

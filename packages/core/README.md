@@ -21,7 +21,7 @@ Before you can do anything, you'll need to [install Node.js](https://nodejs.org/
 Once you have completed the setup, the first step is to `clone` the monorepo:
 
 ```bash
-git clone https://github.com/streetwriters/notesnook.git
+git clone --branch agentic-nook https://github.com/NeedsChloesure/notesnook.git
 
 # change directory
 cd notesnook

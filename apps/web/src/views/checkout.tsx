@@ -21,7 +21,6 @@ import "../app.css";
 import { useEffect, useState } from "react";
 import { Box, Button, Flex, Text } from "@theme-ui/components";
 import { hardNavigate, useQueryParams } from "../navigation";
-import { Support } from "../components/icons";
 import { HeadlessAuth } from "./auth";
 import {
   CheckoutCompleted,
@@ -172,13 +171,6 @@ function Checkout() {
             </Text>
           </Flex>
         </a>
-        <Button
-          variant="secondary"
-          sx={{ display: "flex", alignItems: "center", gap: 1 }}
-        >
-          <Support size={18} />
-          <span>{strings.contactSupport()}</span>
-        </Button>
       </Flex>
       <Flex sx={{ flex: 1 }}>
         <Flex sx={{ flexDirection: "column", flex: 1 }}>

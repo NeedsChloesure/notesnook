@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import { Button, Flex, Text } from "@theme-ui/components";
 import Accordion from "../../accordion";
 import { strings } from "@notesnook/intl";
+import { FORK_NEW_ISSUE_URL } from "../../../utils/unofficial-build";
 
 type ImportErrorsProps = {
   errors: Error[];
@@ -48,10 +49,7 @@ export function ImportErrors(props: ImportErrorsProps) {
           variant="error"
           sx={{ alignSelf: "start", mt: 2 }}
           onClick={() =>
-            window.open(
-              "https://github.com/streetwriters/notesnook-importer/issues/new",
-              "_blank"
-            )
+            window.open(FORK_NEW_ISSUE_URL, "_blank")
           }
         >
           {strings.sendUsABugReport()}

@@ -25,10 +25,12 @@ import { checkForUpdate, downloadUpdate } from "../../utils/updater";
 import { isMacStoreApp } from "../../utils/platform";
 import { clearLogs, downloadLogs } from "../../utils/logger";
 import { useAutoUpdateStore } from "../../hooks/use-auto-updater";
-import { IssueDialog } from "../issue-dialog";
+import {
+  FORK_LICENSE_URL,
+  FORK_REPO_URL,
+  openExternalLink
+} from "../../utils/unofficial-build";
 import { strings } from "@notesnook/intl";
-import { desktop } from "../../common/desktop-bridge";
-import { TaskManager } from "../../common/task-manager";
 import { useStore as useSettingStore } from "../../stores/setting-store";
 
 export const AboutSettings: SettingsGroup[] = [
@@ -86,87 +88,15 @@ export const AboutSettings: SettingsGroup[] = [
         }
       },
       {
-        key: "release-track",
-        title: strings.releaseTrack(),
-        description: strings.releaseTrackDesc(),
-        isHidden: () =>
-          useSettingStore.getState().isFlatpak ||
-          useSettingStore.getState().isSnap ||
-          useSettingStore.getState().isPortable,
-        components: [
-          {
-            type: "dropdown",
-            options: [
-              {
-                title: strings.stable(),
-                value: "stable"
-              },
-              {
-                title: strings.beta(),
-                value: "beta"
-              }
-            ],
-            selectedOption: async () => {
-              if (IS_DESKTOP_APP)
-                return (
-                  (await desktop?.updater.releaseTrack.query()) || "stable"
-                );
-
-              return (
-                document.cookie
-                  .split("; ")
-                  .find((row) => row.startsWith("release-track="))
-                  ?.split("=")[1] || "stable"
-              );
-            },
-            async onSelectionChanged(value) {
-              if (IS_DESKTOP_APP) {
-                return await desktop?.updater.changeReleaseTrack.mutate({
-                  track: value
-                });
-              }
-              const registration =
-                await navigator.serviceWorker.getRegistration();
-              if (!registration) return;
-              const worker =
-                registration.active ||
-                registration.waiting ||
-                registration.installing;
-              if (!worker) return;
-              if (worker.state === "activated") {
-                await switchReleaseTrack(value);
-              } else {
-                await TaskManager.startTask({
-                  type: "modal",
-                  title: strings.changingReleaseTrack(),
-                  subtitle: strings.changingReleaseTrackWait(),
-                  action: () =>
-                    new Promise<void>((resolve) => {
-                      worker.onstatechange = async function () {
-                        if (this.state === "activated") {
-                          await switchReleaseTrack(value);
-                          resolve();
-                        }
-                      };
-                    })
-                });
-              }
-            }
-          }
-        ]
-      },
-      {
         key: "source-code",
         title: strings.sourceCode(),
-        description: strings.sourceCodeDescription(),
+        description:
+          "This is an unofficial build. The source code for the version you are using lives in this fork (branch agentic-nook), not upstream.",
         components: [
           {
             type: "button",
             action: () => {
-              window.open(
-                "https://github.com/streetwriters/notesnook",
-                "_blank"
-              );
+              window.open(FORK_REPO_URL, "_blank");
             },
             title: strings.viewSourceCode(),
             variant: "secondary"
@@ -181,7 +111,7 @@ export const AboutSettings: SettingsGroup[] = [
           {
             type: "button",
             action: () =>
-              void window.open("https://notesnook.com/roadmap", "_blank"),
+              void openExternalLink("https://notesnook.com/roadmap"),
             title: strings.checkRoadmap(),
             variant: "secondary"
           }
@@ -199,11 +129,10 @@ export const AboutSettings: SettingsGroup[] = [
           {
             type: "button",
             action: () =>
-              void window.open(
+              void openExternalLink(
                 isMacStoreApp()
                   ? "https://apps.apple.com/us/app/notesnook-take-private-notes/id1544027013"
-                  : "https://notesnook.com/downloads",
-                "_blank"
+                  : "https://notesnook.com/downloads"
               ),
             title: strings.network.download(),
             variant: "secondary"
@@ -224,7 +153,7 @@ export const AboutSettings: SettingsGroup[] = [
         components: [
           {
             type: "button",
-            action: () => void window.open("https://t.me/notesnook", "_blank"),
+            action: () => void openExternalLink("https://t.me/notesnook"),
             title: strings.joinTelegram(),
             variant: "secondary"
           }
@@ -238,7 +167,7 @@ export const AboutSettings: SettingsGroup[] = [
           {
             type: "button",
             action: () =>
-              void window.open("https://fosstodon.org/@notesnook", "_blank"),
+              void openExternalLink("https://fosstodon.org/@notesnook"),
             title: strings.follow(),
             variant: "secondary"
           }
@@ -252,7 +181,7 @@ export const AboutSettings: SettingsGroup[] = [
           {
             type: "button",
             action: () =>
-              void window.open("https://twitter.com/notesnook", "_blank"),
+              void openExternalLink("https://twitter.com/notesnook"),
             title: strings.follow(),
             variant: "secondary"
           }
@@ -266,10 +195,7 @@ export const AboutSettings: SettingsGroup[] = [
           {
             type: "button",
             action: () =>
-              void window.open(
-                "https://discord.com/invite/zQBK97EE22",
-                "_blank"
-              ),
+              void openExternalLink("https://discord.com/invite/zQBK97EE22"),
             title: strings.joinCommunity(),
             variant: "secondary"
           }
@@ -320,11 +246,7 @@ export const LegalSettings: SettingsGroup[] = [
         components: [
           {
             type: "button",
-            action: () =>
-              void window.open(
-                "https://github.com/streetwriters/notesnook/blob/master/LICENSE",
-                "_blank"
-              ),
+            action: () => void window.open(FORK_LICENSE_URL, "_blank"),
             title: strings.open(),
             variant: "secondary"
           }
@@ -341,43 +263,6 @@ export const SupportSettings: SettingsGroup[] = [
     header: strings.helpAndSupport(),
     settings: [
       {
-        key: "report-issue",
-        title: strings.reportAnIssue(),
-        description: strings.reportAnIssueDesc(),
-        components: [
-          {
-            type: "button",
-            action: () => IssueDialog.show({}),
-            title: strings.report(),
-            variant: "secondary"
-          }
-        ]
-      },
-      {
-        key: "email-us",
-        title: strings.emailSupport(),
-        description: strings.emailSupportDesc(),
-        components: [
-          {
-            type: "button",
-            action: async () => {
-              await navigator.clipboard.writeText("support@streetwriters.co");
-              showToast("info", strings.copied());
-            },
-            title: strings.copy(),
-            variant: "secondary"
-          },
-          {
-            type: "button",
-            action: () => {
-              window.open("mailto:support@streetwriters.co", "_blank");
-            },
-            title: strings.send(),
-            variant: "secondary"
-          }
-        ]
-      },
-      {
         key: "docs",
         title: strings.documentation(),
         description: strings.documentationDesc(),
@@ -385,7 +270,7 @@ export const SupportSettings: SettingsGroup[] = [
           {
             type: "button",
             action: () =>
-              void window.open("https://notesnook.com/help/", "_blank"),
+              void openExternalLink("https://notesnook.com/help/"),
             title: strings.open(),
             variant: "secondary"
           }
@@ -420,12 +305,3 @@ export const SupportSettings: SettingsGroup[] = [
     ]
   }
 ];
-
-async function switchReleaseTrack(track: string) {
-  const registration = await navigator.serviceWorker.getRegistration();
-  if (!registration) return;
-  await registration.unregister();
-  for (const key of await caches.keys()) await caches.delete(key);
-  document.cookie = `release-track=${track}; Secure; Path=/; max-age=2147483647`;
-  window.location.reload();
-}

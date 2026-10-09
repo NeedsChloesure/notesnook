@@ -24,6 +24,7 @@ import {
 } from "@notesnook-importer/core";
 import { Flex, Text } from "@theme-ui/components";
 import { strings } from "@notesnook/intl";
+import { FORK_NEW_ISSUE_URL } from "../../../utils/unofficial-build";
 
 type ProviderSelectorProps = {
   onProviderChanged: (provider: IProvider) => void;
@@ -47,10 +48,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
           sx={{ mt: 1, color: "paragraph", whiteSpace: "pre-wrap" }}
         >
           {strings.cantFindNotesApp()}{" "}
-          <a
-            href="https://github.com/streetwriters/notesnook-importer/issues/new"
-            target="_blank"
-          >
+          <a href={FORK_NEW_ISSUE_URL} target="_blank">
             {strings.sendUsARequest()}
           </a>
         </Text>

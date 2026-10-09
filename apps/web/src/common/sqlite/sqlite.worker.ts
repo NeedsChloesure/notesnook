@@ -23,7 +23,6 @@ import { expose, transfer } from "comlink";
 import type { RunMode } from "./type";
 import { QueryResult } from "@streetwriters/kysely";
 import { DatabaseSource } from "./sqlite-export";
-import { createSharedServicePort } from "./shared-service";
 import type { IDBBatchAtomicVFS } from "./IDBBatchAtomicVFS";
 import type { AccessHandlePoolVFS } from "./AccessHandlePoolVFS";
 import { rewriteError } from "../../utils/error";
@@ -262,19 +261,5 @@ class _SQLiteWorker {
 
 export type SQLiteWorker = typeof _SQLiteWorker.prototype;
 
-addEventListener("message", async (event) => {
-  if (!event.data.type) {
-    const worker = new _SQLiteWorker();
-    await worker.open(event.data.dbName, {
-      async: event.data.async,
-      encrypted: event.data.encrypted,
-      url: event.data.uri
-    });
-    const providerPort = createSharedServicePort(worker);
-    postMessage(null, [providerPort]);
-
-    self.addEventListener("beforeunload", () => worker.close());
-  }
-});
 const worker = new _SQLiteWorker();
 expose(worker);

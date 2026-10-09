@@ -102,12 +102,6 @@ export const MigrationDialog = DialogManager.register(function MigrationDialog(
             overflowWrap: "break-word"
           }}
         />
-        <Text as="p" variant={"subBody"} sx={{ mt: 2 }}>
-          {strings.migrationErrorNotice()[0]}{" "}
-          <a href="https://discord.com/invite/zQBK97EE22">Discord</a>{" "}
-          {strings.migrationErrorNotice()[1]}{" "}
-          <a href="mailto:support@streetwriters.co">support@streetwriters.co</a>
-        </Text>
       </Dialog>
     );
   }

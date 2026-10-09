@@ -41,6 +41,7 @@ import { FeatureDialog } from "./dialogs/feature-dialog";
 import { AnnouncementDialog } from "./dialogs/announcement-dialog";
 import { logger } from "./utils/logger";
 import { showToast } from "./utils/toast";
+import { openExternalLink } from "./utils/unofficial-build";
 import { strings } from "@notesnook/intl";
 
 export default function AppEffects() {
@@ -203,6 +204,34 @@ export default function AppEffects() {
 
   useEffect(() => {
     introduceFeatures();
+  }, []);
+
+  useEffect(() => {
+    // Dialog descriptions can contain markdown links to the upstream docs
+    // (e.g. the "Read more" links in faq messages). Route those through the
+    // unofficial build notice instead of opening them directly.
+    function onClickExternalLink(e: MouseEvent) {
+      const anchor = (e.target as HTMLElement | null)?.closest?.("a[href]");
+      if (!anchor || !anchor.closest('[role="dialog"]')) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || !/^https?:/i.test(href)) return;
+
+      let isExternal = false;
+      try {
+        isExternal = new URL(href).origin !== location.origin;
+      } catch {
+        return;
+      }
+      if (!isExternal) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      void openExternalLink(href);
+    }
+
+    document.addEventListener("click", onClickExternalLink, true);
+    return () => document.removeEventListener("click", onClickExternalLink, true);
   }, []);
 
   useEffect(() => {

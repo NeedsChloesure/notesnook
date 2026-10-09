@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 import { strings } from "@notesnook/intl";
+import { openExternalLink } from "../../utils/unofficial-build";
 import { escapeUTF8 } from "entities";
 import { db } from "../../common/db";
 import {
@@ -179,7 +180,7 @@ const staticCommands: Command[] = [
     id: "help",
     title: strings.helpAndSupport(),
     icon: ArrowTopRight,
-    action: () => (window.location.href = "https://notesnook.com/help"),
+    action: () => void openExternalLink("https://notesnook.com/help"),
     group: strings.navigate(),
     type: "command"
   },

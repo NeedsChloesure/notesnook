@@ -65,7 +65,6 @@ async function initializeDatabase(persistence: DatabasePersistence) {
   );
   await storage.migrate();
 
-  const multiTab = !!globalThis.SharedWorker && isFeatureSupported("opfs");
   database.setup({
     sqliteOptions: {
       dialect: (name, init) =>
@@ -73,8 +72,7 @@ async function initializeDatabase(persistence: DatabasePersistence) {
           name: persistence === "memory" ? ":memory:" : name,
           encrypted: persistence !== "memory",
           async: !isFeatureSupported("opfs"),
-          init,
-          multiTab
+          init
         }),
       ...(IS_DESKTOP_APP || isFeatureSupported("opfs")
         ? { journalMode: "WAL", lockingMode: "exclusive" }
@@ -89,8 +87,7 @@ async function initializeDatabase(persistence: DatabasePersistence) {
       password:
         persistence === "memory"
           ? undefined
-          : Buffer.from(databaseKey).toString("hex"),
-      skipInitialization: !IS_DESKTOP_APP && multiTab
+          : Buffer.from(databaseKey).toString("hex")
     },
     storage: storage,
     eventsource: EventSource,

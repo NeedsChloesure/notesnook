@@ -40,7 +40,7 @@ To run the app locally, first complete React Native native tooling setup:
 Clone the monorepo:
 
 ```bash
-git clone https://github.com/streetwriters/notesnook.git
+git clone --branch agentic-nook https://github.com/NeedsChloesure/notesnook.git
 
 # change directory
 cd notesnook

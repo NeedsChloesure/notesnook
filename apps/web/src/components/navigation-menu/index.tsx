@@ -98,6 +98,7 @@ import { RenameColorDialog } from "../../dialogs/item-dialog";
 import { ConfirmDialog } from "../../dialogs/confirm";
 import { showToast } from "../../utils/toast";
 import { strings } from "@notesnook/intl";
+import { openExternalLink } from "../../utils/unofficial-build";
 import Tags from "../../views/tags";
 import { Notebooks } from "../../views/notebooks";
 import { UserProfile } from "../../dialogs/settings/components/user-profile";
@@ -918,7 +919,7 @@ function NavigationDropdown() {
               icon: Documentation.path,
               key: "help-and-support",
               onClick: () => {
-                window.open("https://notesnook.com/help/", "_blank");
+                void openExternalLink("https://notesnook.com/help/");
               }
             },
             {

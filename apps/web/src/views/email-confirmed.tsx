@@ -23,6 +23,7 @@ import { Flex, Text } from "@theme-ui/components";
 import { useQueryParams } from "../navigation";
 import { MailCheck, Discord, Twitter, Reddit } from "../components/icons";
 import { strings } from "@notesnook/intl";
+import { openExternalLink } from "../utils/unofficial-build";
 
 function EmailConfirmed() {
   const [{ userId }] = useQueryParams();
@@ -151,7 +152,7 @@ function BlogPromoBanner() {
             key={account.title}
             title={account.title}
             onClick={() => {
-              window.open(account.link, "_blank");
+              void openExternalLink(account.link);
             }}
             size={30}
             sx={{ mr: 1, cursor: "pointer" }}
